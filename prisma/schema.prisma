@@ -1,0 +1,99 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id    Int     @default(autoincrement()) @id
+  email String  @unique
+  password String
+  name  String
+  blockChainAddress String
+  teamId Int?
+  team Team? @relation("team", fields: [teamId], references: [id])
+  teamOwned Team? @relation("creator")
+  role  String  @default("user")
+  nfts NFT[]
+  ratings Rating[]
+  sells Sell[] @relation(name: "seller")
+  buys Sell[] @relation(name: "buyer")
+  previousNFTs NFT[] @relation("previousOwners")
+  collections Collection[] 
+  deletedAt DateTime?
+}
+
+model Team {
+  id Int @default(autoincrement()) @id
+  name String @unique
+  balance Float @default(0) @db.Real
+  creatorId Int @unique
+  creator User @relation("creator", fields: [creatorId], references: [id])
+  users User[] @relation("team")
+  usersId Int[]
+  deletedAt DateTime?
+}
+
+enum NFTStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model NFT {
+  id Int @default(autoincrement()) @id
+  name String
+  image String
+  status NFTStatus
+  price Float @default(0) @db.Real
+  owner User @relation(fields: [ownerId], references: [id])
+  ownerId Int 
+  collectionId Int?
+  collection Collection? @relation(fields: [collectionId], references: [id])
+  previousOwnersId Int[]
+  previousOwners User[] @relation("previousOwners")
+  ratings Rating[]
+  sells Sell[]
+  deletedAt DateTime?
+}
+
+model Rating {
+  id Int @default(autoincrement()) @id
+  nftId Int
+  nft NFT @relation(fields: [nftId], references: [id])
+  userId Int
+  user User @relation(fields: [userId], references: [id])
+  rating Int
+  deletedAt DateTime?
+}
+
+model Sell {
+  id Int @default(autoincrement()) @id
+  nftId Int
+  nft NFT @relation(fields: [nftId], references: [id])
+  sellerId Int
+  seller User @relation(name: "seller", fields: [sellerId], references: [id])
+  buyerId Int
+  buyer User @relation(name: "buyer", fields: [buyerId], references: [id])
+  price Float @default(0) @db.Real
+  createdAt DateTime @default(now())
+}
+
+model Collection {
+  id Int @default(autoincrement()) @id
+  name String
+  logo String?
+  status NFTStatus
+  archivingDate DateTime?
+  creatorId Int
+  creator User @relation(fields: [creatorId], references: [id])
+  nftsId Int[]
+  nfts NFT[]
+  deletedAt DateTime?
+}
